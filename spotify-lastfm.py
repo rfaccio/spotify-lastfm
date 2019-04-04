@@ -6,13 +6,13 @@ import sys
 import spotipy
 import spotipy.util as util
 
-import keys
+import config
 import functions
 
-lastfm_network = pylast.LastFMNetwork(api_key=keys.LASTFM_API_KEY,
-                                        api_secret=keys.LASTFM_API_SECRET,
-                                        username=keys.LASTFM_USERNAME,
-                                        password_hash=keys.LASTFM_PASSWORD)
+lastfm_network = pylast.LastFMNetwork(api_key=config.LASTFM_API_KEY,
+                                        api_secret=config.LASTFM_API_SECRET,
+                                        username=config.LASTFM_USERNAME,
+                                        password_hash=config.LASTFM_PASSWORD)
 lastfm_user = lastfm_network.get_authenticated_user()
 print(lastfm_user)
 #chart_artists = user.get_top_artists(period='7day',limit=3)
@@ -44,7 +44,7 @@ scope_modify_public = 'playlist-modify-public'
 scopes = scope_read_private + ' ' + scope_modify_public + ' ' + scope_modify_private
 sp_username = input('Usuario spotify: ')
 
-token = util.prompt_for_user_token(sp_username,scopes,client_id=keys.SPOTIPY_CLIENT_ID,client_secret=keys.SPOTIPY_CLIENT_SECRET,redirect_uri=keys.SPOTIPY_REDIRECT_URI)
+token = util.prompt_for_user_token(sp_username,scopes,client_id=config.SPOTIPY_CLIENT_ID,client_secret=config.SPOTIPY_CLIENT_SECRET,redirect_uri=config.SPOTIPY_REDIRECT_URI)
 if not token:
     print('TOKEN = NULL' + token)
 
