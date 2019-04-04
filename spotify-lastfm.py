@@ -21,7 +21,7 @@ print(lastfm_user)
 rInput = input('Charts ((1) = Overall, (2) = 7 days, (3) = 1 month, (4) = 3 months, (5) = 6 months, (6) = 12 months: ')
 periodo = functions.get_periodo(rInput)
 qtdBusca = input('Quantidade de musicas a ser retornada: ')
-chart_tracks  = user.get_top_tracks(period=periodo,limit=int(qtdBusca))
+chart_tracks  = lastfm_user.get_top_tracks(period=periodo,limit=int(qtdBusca))
 
 track_ids = []
 tracks = []
