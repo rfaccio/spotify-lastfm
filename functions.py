@@ -15,14 +15,14 @@ PERIOD_6MONTHS = "6month"
 PERIOD_12MONTHS = "12month"
 
 def init_lastfm(lastfm_username=None,lastfm_password=None):
-    lastfm_username = input('Lastfm username: ')
-    lastfm_password = getpass.getpass('Lastfm password: ')
-    if lastfm_password:        
-        config.LASTFM_PASSWORD = lastfm_password
+    if not config.LASTFM_USERNAME:
+        config.LASTFM_USERNAME = input('Lastfm username: ')
+    if not config.LASTFM_USERNAME:        
+        config.LASTFM_PASSWORD = getpass.getpass('Lastfm password: ')
     try:
         return pylast.LastFMNetwork(api_key=config.LASTFM_API_KEY,
                                     api_secret=config.LASTFM_API_SECRET,
-                                    username=lastfm_username,
+                                    username=config.LASTFM_USERNAME,
                                     password_hash=pylast.md5(config.LASTFM_PASSWORD))
     except Exception as e:
         print(e)
