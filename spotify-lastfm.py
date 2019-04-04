@@ -12,7 +12,7 @@ import functions
 lastfm_network = pylast.LastFMNetwork(api_key=config.LASTFM_API_KEY,
                                         api_secret=config.LASTFM_API_SECRET,
                                         username=config.LASTFM_USERNAME,
-                                        password_hash=config.LASTFM_PASSWORD)
+                                        password_hash=pylast.md5(config.LASTFM_PASSWORD))
 lastfm_user = lastfm_network.get_authenticated_user()
 print(lastfm_user)
 #chart_artists = user.get_top_artists(period='7day',limit=3)
