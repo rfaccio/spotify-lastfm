@@ -1,4 +1,10 @@
 import sys
+import config
+import getpass
+
+import pylast
+import spotipy
+import spotipy.util as util
 
 #lastfm chart options
 PERIOD_OVERALL = "overall"
@@ -7,6 +13,34 @@ PERIOD_1MONTH = "1month"
 PERIOD_3MONTHS = "3month"
 PERIOD_6MONTHS = "6month"
 PERIOD_12MONTHS = "12month"
+
+def init_lastfm(lastfm_username=None,lastfm_password=None):
+    lastfm_username = input('Lastfm username: ')
+    lastfm_password = getpass.getpass('Lastfm password: ')
+    if lastfm_password:        
+        config.LASTFM_PASSWORD = lastfm_password
+    try:
+        return pylast.LastFMNetwork(api_key=config.LASTFM_API_KEY,
+                                    api_secret=config.LASTFM_API_SECRET,
+                                    username=lastfm_username,
+                                    password_hash=pylast.md5(config.LASTFM_PASSWORD))
+    except Exception as e:
+        print(e)
+
+def init_spotipy():
+    scope_modify_private = 'playlist-modify-private'
+    scope_read_private = 'playlist-read-private'
+    scope_modify_public = 'playlist-modify-public'
+
+    scopes = scope_read_private + ' ' + scope_modify_public + ' ' + scope_modify_private
+    sp_username = input('Usuario spotify: ')
+
+    try:
+        token = util.prompt_for_user_token(sp_username,scopes,client_id=config.SPOTIPY_CLIENT_ID,client_secret=config.SPOTIPY_CLIENT_SECRET,redirect_uri=config.SPOTIPY_REDIRECT_URI)
+        if token:
+            return token, sp_username
+    except Exception as e:
+        print(e)
 
 def split_artist_track(artist_track):
     artist_track = artist_track.replace(" – ", " - ")
