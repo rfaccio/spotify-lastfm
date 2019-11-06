@@ -27,13 +27,16 @@ def init_lastfm(lastfm_username=None,lastfm_password=None):
     except Exception as e:
         print(e)
 
-def init_spotipy():
+def init_spotipy(username):
     scope_modify_private = 'playlist-modify-private'
     scope_read_private = 'playlist-read-private'
     scope_modify_public = 'playlist-modify-public'
 
     scopes = scope_read_private + ' ' + scope_modify_public + ' ' + scope_modify_private
-    sp_username = input('Usuario spotify: ')
+    if username != None:
+        sp_username = username
+    else:
+        sp_username = input('Usuario spotify: ')
 
     try:
         token = util.prompt_for_user_token(sp_username,scopes,client_id=config.SPOTIPY_CLIENT_ID,client_secret=config.SPOTIPY_CLIENT_SECRET,redirect_uri=config.SPOTIPY_REDIRECT_URI)

@@ -2,17 +2,23 @@ import pylast
 import pprint
 import json
 import sys
-import getpass
 import spotipy
 import spotipy.util as util
-
+import feedparser
 import config
 import functions
+import os
+
+username = None
+if len(sys.argv) > 1:
+    username = sys.argv[1]
 
 #realiza a autenticação nas APIs
 lastfm_network = functions.init_lastfm()
-token, sp_username = functions.init_spotipy()
+token, sp_username = functions.init_spotipy(username)
 spotipy = spotipy.Spotify(auth=token)
+
+feed = feedparser.parse('http://feeds.feedburner.com/ReverberationRadio')
 
 try:
     spotipy.trace = False
@@ -33,9 +39,9 @@ try:
 
     #inicializa variavel answer
     answer = 's'
+    track_ids = []
+    tracks = []
     while answer == 's':
-        track_ids = []
-        tracks = []
 
         aName = input('Escolha um artista ou lastfm: ')
         if aName == 'lastfm': #se escolher lastfm, adiciona na playlists as listas de mais tocadas
@@ -68,16 +74,97 @@ try:
                         print(e)
                         print('\ntracks:\n')
                         print(tracks)
+        elif aName == 'file':
+            filepath = input('Caminho do arquivo: ')
+            arquivo = open(filepath, 'r')
+            lista = []
+            for line in arquivo:
+                line = line.split('. ')[1]
+                (a, t) = functions.split_artist_track(line)
+                result = spotipy.search(q='artist: '+ a + ' track: '+t, limit=1, type='track', market='BR')
+                if len(result['tracks']['items']) == 0:
+                    result = spotipy.search(q=line, limit=1)
+                    if len(result['tracks']['items']) == 0:
+                        result = spotipy.search(q='track: '+t, limit=1)
+                        if len(result['tracks']['items']) == 0:
+                            print(a, ' - ', t, ': not found.')
+                        else:
+                            track_ids.append(result['tracks']['items'][0]['id'])
+                            print(a, ' - ', t, ': added.')
+                    else:
+                        track_ids.append(result['tracks']['items'][0]['id'])
+                        print(a, ' - ', t, ': added.')
+                else:
+                    track_ids.append(result['tracks']['items'][0]['id'])
+                    print(a, ' - ', t, ': added.')
+        elif aName == 'feed':
+            
+            for entry in feed.entries:
+                not_found = []
+                print('\n---------')
+                print('Feed: ', entry.title, ':')
+                
+                if os.path.isfile(entry.title + '.txt'):
+                    print('> Feed já foi lido')
+                    break
+                #if input('Save entry %s in spotify? (s/n) > ' % entry.title) == 'n':
+                #    break
+                print('---------\n')
+                arq = open(entry.title + '.txt', 'w', encoding='utf-8')
+                arq.write(entry.summary)
+                arq.close()
+                
+                arq = open(entry.title + '.txt', 'r', encoding='utf-8')
+                for line in arq:
+                    song = line.split('. ', 1)[1]
+                    if '-' not in song:
+                        break
+                    (a, t) = functions.split_artist_track(song)
+                    result = spotipy.search(q='artist: '+ a + ' track: '+t, limit=1, type='track', market='BR')
+                    if len(result['tracks']['items']) == 0:
+                        result = spotipy.search(q=song, limit=1, type='track')
+                        if len(result['tracks']['items']) == 0:
+                            result = spotipy.search(q='track: '+t, limit=20, type='track')
+                            if len(result['tracks']['items']) == 0:
+                                not_found.append(line)
+                                print(a, ' - ', t, ': not found.')
+                            else:
+                                msg_t3 = a + ' - ' + t + ': not found.'
+                                for i in result['tracks']['items']:
+                                    for nome in i['artists']:
+                                        if nome['name'] in a:
+                                            track_ids.append(i['id'])
+                                            msg_t3 = a + ' - ' + t + ': added.'
+                                            break                                
+                                if 'not found' in msg_t3:
+                                    not_found.append(line)
+                                print(msg_t3)
+                        else:
+                            track_ids.append(result['tracks']['items'][0]['id'])
+                            print(a, ' - ', t, ': added.')
+                    else:
+                        track_ids.append(result['tracks']['items'][0]['id'])
+                        print(a, ' - ', t, ': added.')
+                if len(track_ids) > 0:
+                    results = spotipy.user_playlist_add_tracks(sp_username, playlist_id, track_ids)
+                    track_ids = []
+                if len(not_found) > 0:
+                    arq_not_found = open('not_found.txt', 'a', encoding='utf-8')
+                    for line in not_found:
+                        arq_not_found.write(line)
+                    arq_not_found.close()
         else:
             artist = spotipy.search(q=aName, limit=20)
-
-            for i, t in enumerate(artist['tracks']['items']):
-                    print(' ', i, t['name'])
-
-            tNumber = input("Escolha a musica: ")
-            track = artist['tracks']['items'][int(tNumber)]
-            track_ids.append(track['id'])
-        answer = input("Mais? (s/n)")
+            if len(artist['tracks']['items']) == 0:
+                print('Nenhum resultado encontrado para: ', aName)
+            else:
+                for i, t in enumerate(artist['tracks']['items']):
+                    print(' ', i, t['artists'][0]['name'], ' - ', t['name'])
+                
+                tNumber = input("Escolha a musica: ")
+                track = artist['tracks']['items'][int(tNumber)]
+                track_ids.append(track['id'])
+        answer = input("Mais? (s/n) > ")
 
     results = spotipy.user_playlist_add_tracks(sp_username, playlist_id, track_ids)
     pprint.pprint(results)
