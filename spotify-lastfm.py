@@ -17,7 +17,8 @@ if len(sys.argv) > 1:
 lastfm_network = functions.init_lastfm()
 token, sp_username = functions.init_spotipy(username)
 spotipy = spotipy.Spotify(auth=token)
-
+if sp_username == '':
+    sp_username = spotipy.current_user()['id']
 feed = feedparser.parse('http://feeds.feedburner.com/ReverberationRadio')
 
 try:
@@ -106,7 +107,7 @@ try:
                 
                 if os.path.isfile(entry.title + '.txt'):
                     print('> Feed já foi lido')
-                    break
+                    continue
                 #if input('Save entry %s in spotify? (s/n) > ' % entry.title) == 'n':
                 #    break
                 print('---------\n')
@@ -116,9 +117,12 @@ try:
                 
                 arq = open(entry.title + '.txt', 'r', encoding='utf-8')
                 for line in arq:
+                    if not line[0].isdigit():
+                        continue
                     song = line.split('. ', 1)[1]
+                    song = song.replace(" – ", " - ")
                     if '-' not in song:
-                        break
+                        continue
                     (a, t) = functions.split_artist_track(song)
                     result = spotipy.search(q='artist: '+ a + ' track: '+t, limit=1, type='track', market='BR')
                     if len(result['tracks']['items']) == 0:

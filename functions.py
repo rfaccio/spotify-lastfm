@@ -33,11 +33,7 @@ def init_spotipy(username):
     scope_modify_public = 'playlist-modify-public'
 
     scopes = scope_read_private + ' ' + scope_modify_public + ' ' + scope_modify_private
-    if username != None:
-        sp_username = username
-    else:
-        sp_username = input('Usuario spotify: ')
-
+    sp_username = ''
     try:
         token = util.prompt_for_user_token(sp_username,scopes,client_id=config.SPOTIPY_CLIENT_ID,client_secret=config.SPOTIPY_CLIENT_SECRET,redirect_uri=config.SPOTIPY_REDIRECT_URI)
         if token:
