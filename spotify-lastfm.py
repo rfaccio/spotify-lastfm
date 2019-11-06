@@ -44,7 +44,7 @@ try:
     tracks = []
     while answer == 's':
 
-        aName = input('Escolha um artista ou lastfm: ')
+        aName = input('Digite uma busca, ou "lastfm"/"file"/"feed": ')
         if aName == 'lastfm': #se escolher lastfm, adiciona na playlists as listas de mais tocadas
             
             lastfm_user = lastfm_network.get_authenticated_user()
@@ -108,8 +108,7 @@ try:
                 if os.path.isfile(entry.title + '.txt'):
                     print('> Feed já foi lido')
                     continue
-                #if input('Save entry %s in spotify? (s/n) > ' % entry.title) == 'n':
-                #    break
+
                 print('---------\n')
                 arq = open(entry.title + '.txt', 'w', encoding='utf-8')
                 arq.write(entry.summary)
