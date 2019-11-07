@@ -30,12 +30,21 @@ try:
         print('playlist ' + pName + ' criada')
         playlist_id = playlists['id']
     elif plistInput == '2': #exibe playlists do usuario para seleção
-        playlists = spotipy.user_playlists(sp_username)
-        for i, item in enumerate(playlists['items']):
+        offset = 1
+        all_playlists = []
+        while True:
+            playlists = spotipy.user_playlists(sp_username, offset=offset)
+            for i, item in enumerate(playlists['items']):
+                #print("%d %s" %(i, item['name']))
+                offset = offset + i
+                all_playlists.append(item)
+            if len(playlists['items']) == 0:
+                break
+        for i, item in enumerate(all_playlists):
             print("%d %s" %(i, item['name']))
 
         pNumber = input("Please choose playlist number: ")
-        playlist = playlists['items'][int(pNumber)]
+        playlist = all_playlists[int(pNumber)]
         playlist_id = playlist['id']
 
     #inicializa variavel answer
@@ -77,82 +86,37 @@ try:
                         print(tracks)
         elif aName == 'file':
             filepath = input('Caminho do arquivo: ')
-            arquivo = open(filepath, 'r')
-            lista = []
-            for line in arquivo:
-                line = line.split('. ')[1]
-                (a, t) = functions.split_artist_track(line)
-                result = spotipy.search(q='artist: '+ a + ' track: '+t, limit=1, type='track', market='BR')
-                if len(result['tracks']['items']) == 0:
-                    result = spotipy.search(q=line, limit=1)
-                    if len(result['tracks']['items']) == 0:
-                        result = spotipy.search(q='track: '+t, limit=1)
-                        if len(result['tracks']['items']) == 0:
-                            print(a, ' - ', t, ': not found.')
-                        else:
-                            track_ids.append(result['tracks']['items'][0]['id'])
-                            print(a, ' - ', t, ': added.')
-                    else:
-                        track_ids.append(result['tracks']['items'][0]['id'])
-                        print(a, ' - ', t, ': added.')
-                else:
-                    track_ids.append(result['tracks']['items'][0]['id'])
-                    print(a, ' - ', t, ': added.')
+            arquivo = open(filepath, 'r', encoding='utf-8')
+            track_ids, not_found = functions.search_song(spotipy, arquivo)
+
         elif aName == 'feed':
-            
+
             for entry in feed.entries:
-                not_found = []
                 print('\n---------')
                 print('Feed: ', entry.title, ':')
                 
-                if os.path.isfile(entry.title + '.txt'):
-                    print('> Feed já foi lido')
+                try:
+                    if os.path.isfile('feed/' + entry.title + '.txt'):
+                        print('> Feed já foi lido')
+                        continue
+                    else:
+                        print('---------\n')
+                        arq = open('feed/' + entry.title + '.txt', 'w', encoding='utf-8')
+                        arq.write(entry.summary)
+                        arq.close()
+
+                    arq = open('feed/' + entry.title + '.txt', 'r', encoding='utf-8')
+                except Exception as e:
+                    print(e)
                     continue
 
-                print('---------\n')
-                arq = open(entry.title + '.txt', 'w', encoding='utf-8')
-                arq.write(entry.summary)
-                arq.close()
-                
-                arq = open(entry.title + '.txt', 'r', encoding='utf-8')
-                for line in arq:
-                    if not line[0].isdigit():
-                        continue
-                    song = line.split('. ', 1)[1]
-                    song = song.replace(" – ", " - ")
-                    if '-' not in song:
-                        continue
-                    (a, t) = functions.split_artist_track(song)
-                    result = spotipy.search(q='artist: '+ a + ' track: '+t, limit=1, type='track', market='BR')
-                    if len(result['tracks']['items']) == 0:
-                        result = spotipy.search(q=song, limit=1, type='track')
-                        if len(result['tracks']['items']) == 0:
-                            result = spotipy.search(q='track: '+t, limit=20, type='track')
-                            if len(result['tracks']['items']) == 0:
-                                not_found.append(line)
-                                print(a, ' - ', t, ': not found.')
-                            else:
-                                msg_t3 = a + ' - ' + t + ': not found.'
-                                for i in result['tracks']['items']:
-                                    for nome in i['artists']:
-                                        if nome['name'] in a:
-                                            track_ids.append(i['id'])
-                                            msg_t3 = a + ' - ' + t + ': added.'
-                                            break                                
-                                if 'not found' in msg_t3:
-                                    not_found.append(line)
-                                print(msg_t3)
-                        else:
-                            track_ids.append(result['tracks']['items'][0]['id'])
-                            print(a, ' - ', t, ': added.')
-                    else:
-                        track_ids.append(result['tracks']['items'][0]['id'])
-                        print(a, ' - ', t, ': added.')
+                track_ids, not_found = functions.search_song(spotipy, arq)
                 if len(track_ids) > 0:
                     results = spotipy.user_playlist_add_tracks(sp_username, playlist_id, track_ids)
+                    print(len(track_ids), ' tracks added to: ', playlist['name'])
                     track_ids = []
                 if len(not_found) > 0:
-                    arq_not_found = open('not_found.txt', 'a', encoding='utf-8')
+                    arq_not_found = open('feed/' + 'not_found.txt', 'a', encoding='utf-8')
                     for line in not_found:
                         arq_not_found.write(line)
                     arq_not_found.close()
@@ -170,6 +134,7 @@ try:
         answer = input("Mais? (s/n) > ")
 
     results = spotipy.user_playlist_add_tracks(sp_username, playlist_id, track_ids)
+    print(len(track_ids), ' tracks added to: ', playlist['name'])
     pprint.pprint(results)
 except Exception as e:
     print(e)

@@ -74,3 +74,42 @@ def get_periodo(rInput=1):
         return PERIOD_12MONTHS
     else:
         return PERIOD_OVERALL
+
+def search_song(spotipy, arq):
+    not_found = []
+    track_ids = []
+
+    for line in arq:
+        if not line[0].isdigit():
+            continue
+        song = line.split('. ', 1)[1]
+        song = song.replace(" – ", " - ")
+        if '-' not in song:
+            continue
+        (a, t) = split_artist_track(song)
+        result = spotipy.search(q='artist: '+ a + ' track: '+t, limit=1, type='track')
+        if len(result['tracks']['items']) == 0:
+            result = spotipy.search(q=song, limit=1, type='track')
+            if len(result['tracks']['items']) == 0:
+                result = spotipy.search(q='track: '+t, limit=20, type='track')
+                if len(result['tracks']['items']) == 0:
+                    not_found.append(line)
+                    print(a, ' - ', t, ': not found.')
+                else:
+                    msg_t3 = a + ' - ' + t + ': not found.'
+                    for i in result['tracks']['items']:
+                        for nome in i['artists']:
+                            if nome['name'] in a:
+                                track_ids.append(i['id'])
+                                msg_t3 = a + ' - ' + t + ': found.'
+                                break                                
+                    if 'not found' in msg_t3:
+                        not_found.append(line)
+                    print(msg_t3)
+            else:
+                track_ids.append(result['tracks']['items'][0]['id'])
+                print(a, ' - ', t, ': found.')
+        else:
+            track_ids.append(result['tracks']['items'][0]['id'])
+            print(a, ' - ', t, ': found.')
+    return track_ids, not_found
