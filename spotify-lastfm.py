@@ -23,7 +23,7 @@ feed = feedparser.parse('http://feeds.feedburner.com/ReverberationRadio')
 
 try:
     spotipy.trace = False
-    plistInput = input('(1) Criar ou (2) escolher playlist (1/2): ')
+    plistInput = input('Criar [1] ou Escolher Playlist [2]: ')
     if plistInput == '1': #cria playlist nova
         pName = input('Nome da playlist :')
         playlists = spotipy.user_playlist_create(user=sp_username, name=pName, public=False)
@@ -90,6 +90,9 @@ try:
             track_ids, not_found = functions.search_song(spotipy, arquivo)
 
         elif aName == 'feed':
+            if not feed:
+                feedUrl = input('URL do feed do podcast: ')
+                feed = feedparser.parse(feedUrl)
 
             for entry in feed.entries:
                 print('\n---------')

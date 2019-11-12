@@ -45,6 +45,7 @@ def split_artist_track(artist_track):
     artist_track = artist_track.replace(" – ", " - ")
     artist_track = artist_track.replace("“", '"')
     artist_track = artist_track.replace("”", '"')
+    artist_track = artist_track.replace('\t', ' ')
 
     (artist, track) = artist_track.split(' - ', 1)
     artist = artist.strip()
